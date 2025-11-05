@@ -21,7 +21,7 @@ class Field:
 class Name(Field):
     pass
 
-
+ 
 class Phone(Field):
 
     @property
@@ -45,10 +45,16 @@ class Phone(Field):
 class Birthday(Field):
     def __init__(self, value: str):
         try:
-            self.datetime = datetime.strptime(value,"DD.MM.YYYY")
+            self.date = datetime.datetime.strptime(value,"%d.%m.%Y").date()
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
-        
+
+    @property
+    def value(self):
+        return self.date
+    
+    def __str__(self):
+        return self.date.strftime("%d.%m.%Y")
 
 class Record:
 
@@ -67,12 +73,11 @@ class Record:
         except ValueError as e:
             pass
 
-    def add_birthday(self, value: str):
+    def add_birthday(self, bday: str):
         try:
-            self.birthday = Birthday(str)
+            self.birthday = Birthday(bday)
         except ValueError as e:
             self.birthday = None
-            print(e)
     
     def remove_phone(self, phone_number: str):
         phone_to_remove = self.find_phone(phone_number)
@@ -100,7 +105,7 @@ class Record:
 
     def __str__(self)-> str:
         phones_str = ", ".join("'"+p.value+"'" for p in self.phones)
-        return f"Contact: {self.name.value}, Phones: {"["+phones_str+"]" if phones_str else 'Empty list'}"
+        return f"Contact: {self.name.value}, Phones: {"["+phones_str+"]" if phones_str else 'Empty list'}, Birthday: {"Not set" if self.birthday is None else self.birthday}"
 
 
 class AddressBook(UserDict):
@@ -126,6 +131,30 @@ class AddressBook(UserDict):
 
     def get_upcoming_birthdays(self)->list:
         result = []
+        curr_date = datetime.datetime.today().date()
+        user_bday_date_corrected: datetime.date = None
+
+        for key, record in self.data.items():
+            if record.birthday is None:
+                continue
+
+            user_bday_date = record.birthday.value
+        
+            if curr_date.month == 12 and user_bday_date.month == 1:
+                user_bday_date_corrected = user_bday_date.replace(year=curr_date.year+1)
+            else:
+                user_bday_date_corrected = user_bday_date.replace(year=curr_date.year)
+
+            time_delta = user_bday_date_corrected - curr_date
+            if time_delta.days>=0 and time_delta.days<=7:
+                if user_bday_date_corrected.weekday()>4:
+                    increment_days = datetime.timedelta(days=7-user_bday_date_corrected.weekday())
+                    user_bday_date_corrected += increment_days
+            
+                time_delta = user_bday_date_corrected - curr_date
+                if time_delta.days>=0 and time_delta.days<=7:
+                    result.append(f"{record.name.value}'s birthday {user_bday_date_corrected.strftime("%d.%m.%Y")}")
+
         return result
 
     def __str__(self):

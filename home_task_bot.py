@@ -24,8 +24,8 @@ def input_error(func):
             return KEY_ERROR
         except ValidPhoneError:
             return INVALID_PHONE
-        except ValueError:
-            return INVALID_COMMAND
+        except ValueError as e:
+            return str(e)
     return inner
 
 
@@ -102,6 +102,40 @@ def get_phone_by_name(args: list, book: AddressBook) -> str:
     
     return list(map(lambda phone: phone.value,record.phones)) 
 
+@input_error
+def add_birthday(args: list, book: AddressBook):
+    name = args[0]
+    bday = None if len(args)<2 else args[1]
+    
+    name = name.capitalize()
+    record = book.find(name)
+
+    if record is None:
+        return KEY_ERROR
+    
+    if bday is not None:
+        record.add_birthday(bday)
+        
+    message = f"Birthday {record.birthday.value} successfully added for {record.name.value} "
+    if record.birthday is None:
+        message = f"Invalid birthday format. Use DD.MM.YYYY. "
+
+    return message
+
+@input_error
+def show_birthday(args: list, book: AddressBook)-> str:
+    name = args[0]
+    name = name.capitalize()
+
+    record = book.find(name)
+    if record is None:
+        return KEY_ERROR
+    
+    return record.birthday if record.birthday is not None else "Birthday record absent."
+
+@input_error
+def birthdays(args: list, book: AddressBook)->str:
+    return book.get_upcoming_birthdays()
 
 def get_all_contacts(args: list, book: AddressBook) -> str:
     return f"{book}"
@@ -128,6 +162,12 @@ def main():
             print(get_phone_by_name(args, book))
         elif command == "all":
             print(get_all_contacts(args, book))
+        elif command == "add-birthday":
+            print(add_birthday(args, book))
+        elif command == "show-birthday":
+            print(show_birthday(args, book))
+        elif command == "birthdays":
+            print(birthdays(args, book))
         elif command == "clear":
             clear_console()
         else:
