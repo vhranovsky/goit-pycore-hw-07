@@ -91,6 +91,9 @@ def change_contact(args: list, book: AddressBook) -> str:
     if record.find_phone(old_phone) is None:
         return f"The phone number {old_phone} does not belong to {name}."
 
+    if record.find_phone(new_phone) is not None:
+        return f"The phone number {new_phone} belong to {name}."
+
     record.edit_phone(old_phone, new_phone)
     return f"Phone {old_phone} changed to {new_phone} for {name}."
 
